@@ -27,5 +27,10 @@ To use this mod, you have to implement one of the following line in to your code
 - `jeans_economy_book(payor, recipient, amount, description)` This function checks, if the payor have enough money, do the transaction between these players (atm accounts), and save this transaction to the database. It returns true, if the transaction was successfully done, otherwise it returns false.
 - `jeans_economy_save(payor, recipient, amount, description)` When you only want to use the logging function, you can use this function. It only saves a transaction to the database without doing further things.
 
+**Please insert only Charakters (a-z and A-Z) and numbers 0-9) to the inputs!!**
+
 ### Example:
 `jeans_economy_book("Player1", "Player2", 500, "Buyed 10 Diamonds")`
+
+## Screenshot of `/transactions`:
+![Bild](screenshot.png)
