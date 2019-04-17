@@ -1,10 +1,10 @@
 # Minetest Mod: Jean's Economy
 
 ## Features:
-- Keep track of your economy on the server by listing all transactions your players did (with time stamps)
+- Keep track to your your economy on the server by listing all transactions your players did (with time stamps) (even individually), or listing some balances of the players.
 - bank statements individually for players
-- Integration of the Atm Mod
-- Handling of transactions between players with automatic checks and filling the bank statements (Modders have to implement just one single line for that)
+- Handling of transactions between players with automatic checks and filling the database (Modders have to implement just one single line for that)
+- Another usefull commands such as `/pay`, `/money`, or `/money_give`
 
 ## Commands:
 `/money <player>` See the current balance of `<player>`. The default ist the player itself
