@@ -206,7 +206,7 @@ function jeans_economy_get_last_transactions_of_player(name, player, count)
       local year, month, day, hour, min, sec, payor, recipient, amount, description = string.match(transactions[transactions_player[player][min_number]], "(%d+);(%d+);(%d+);(%d+);(%d+);(%d+);(%w+);(%w+);(%d+);(.+)")
       local color
       if player == payor then color = colors["red"] else color = colors["green"] end
-      minetest.chat_send_player(name, color..year.."-"..month.."-"..day.." "..hour..":"..min.."   Payor: "..payor.."   Recipient: "..recipient.."   Amount: "..amount.."   |   "..description)
+      minetest.chat_send_player(name, color..year.."-"..month.."-"..day.." "..hour..":"..min.."  "..payor.." =["..amount.."]=> "..recipient.."  "..description)
       min_number = min_number + 1
     end
   end
@@ -221,7 +221,7 @@ function jeans_economy_get_last_transactions_of_all(name, count)
   end
   while min_number < number do
     local year, month, day, hour, min, sec, payor, recipient, amount, description = string.match(transactions[min_number], "(%d+);(%d+);(%d+);(%d+);(%d+);(%d+);(%w+);(%w+);(%d+);(.+)")
-    minetest.chat_send_player(name, year.."-"..month.."-"..day.." "..hour..":"..min.."   Payor: "..payor.."   Recipient: "..recipient.."   Amount: "..amount.."   |   "..description)
+    minetest.chat_send_player(name, year.."-"..month.."-"..day.." "..hour..":"..min.."  "..payor.." -> "..recipient.." ["..amount.."]  "..description)
     min_number = min_number + 1
   end
 end
