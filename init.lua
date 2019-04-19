@@ -100,10 +100,18 @@ minetest.register_chatcommand("money_give", {
   func = function(name, param)
     local player, amount_S = param:match('^(%S+)%s(.+)$')
     local amount = tonumber(amount_S) or 0
+    if player == nil then return end
     if balances ~= nil and balances[player] ~= nil then
-      jeans_economy_book("!SERVER!", player, amount, "! Cheated to "..player.."'s account.")
-      minetest.chat_send_player(name, "Successfully given " .. amount .. " Minegeld to " .. player)
+    elseif balances == nil then
+      balances = {}
+      balances[player] = 0;
+      atm.saveaccounts()
+    else
+      balances[player] = 0;
+      atm.saveaccounts()
     end
+    jeans_economy_book("!SERVER!", player, amount, "! Cheated to "..player.."'s account.")
+    minetest.chat_send_player(name, "Successfully given " .. amount .. " Minegeld to " .. player)
   end
 })
 
@@ -134,6 +142,7 @@ function jeans_economy_save(payor, recipient, amount, description)
   if description == nil or description == "" then
     description = "-"
   end
+  description = description:gsub("%:"," ")
   -- Save global:
   local time = os.date()
   local transactions = minetest.deserialize(storage:get_string("transactions"))
@@ -170,17 +179,18 @@ function jeans_economy_book(payor, recipient, amount, description)
   atm.saveaccounts()
 
   if balances[payor] >= amount then
-    jeans_economy_change_account(payor, -amount)
-    jeans_economy_change_account(recipient, amount)
-    jeans_economy_save(payor, recipient, amount, description)
+    if recipient == "!SERVER!" then
+      jeans_economy_change_account(payor, -amount)
+      jeans_economy_save(payor, "Server", amount, description)
+    else
+      jeans_economy_change_account(payor, -amount)
+      jeans_economy_change_account(recipient, amount)
+      jeans_economy_save(payor, recipient, amount, description)
+    end
     return true
   elseif payor == "!SERVER!" then
     jeans_economy_change_account(recipient, amount)
     jeans_economy_save("Server", recipient, amount, description)
-    return true
-  elseif recipient == "!SERVER!" then
-    jeans_economy_change_account(payor, -amount)
-    jeans_economy_save(payor, "Server", amount, description)
     return true
   else
     return false
