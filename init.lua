@@ -1,8 +1,13 @@
 local storage = minetest.get_mod_storage()
 local balances = atm.balance
+if balances == nil then
+  balances = {}
+end
+
 local colors = {
     ["red"] = minetest.get_color_escape_sequence("#ff0000"), -- Red
     ["green"] = minetest.get_color_escape_sequence("#00ff00"), -- Green
+    ["yellow"] = minetest.get_color_escape_sequence("#ffff00"), -- Yellow
 }
 
 -- Check and initialize the transactions table:
@@ -86,9 +91,7 @@ minetest.register_chatcommand("money", {
     if param == "" then
       player = name
     end
-    if balances ~= nil and balances[player] ~= nil then
-			minetest.chat_send_player(name, player .. "'s account: " .. balances[player] .. " Minegeld")
-    end
+  	minetest.chat_send_player(name, player .. "'s account: " .. jeans_economy_ballance(player) .. " Minegeld")
   end
 })
 
@@ -142,7 +145,7 @@ function jeans_economy_save(payor, recipient, amount, description)
   if description == nil or description == "" then
     description = "-"
   end
-  description = description:gsub("%:"," ")
+  -- description = description:gsub("%:"," ") -- Remove ":"
   -- Save global:
   local time = os.date()
   local transactions = minetest.deserialize(storage:get_string("transactions"))
@@ -214,9 +217,13 @@ function jeans_economy_get_last_transactions_of_player(name, player, count)
     end
     while min_number < max_number do
       local year, month, day, hour, min, sec, payor, recipient, amount, description = string.match(transactions[transactions_player[player][min_number]], "(%d+) (%d+) (%d+) (%d+) (%d+) (%d+) (%S+) (%S+) (%d+) (.+)")
-      local color
-      if player == payor then color = colors["red"] else color = colors["green"] end
-      minetest.chat_send_player(name, color..year.."-"..month.."-"..day.." "..hour..":"..min.."  "..payor.." =["..amount.."]=> "..recipient.."    "..description)
+      if description ~= nil then
+        local color
+        if player == payor then color = colors["red"] else color = colors["green"] end
+        minetest.chat_send_player(name, color..year.."-"..month.."-"..day.." "..hour..":"..min.."  "..payor.." =["..amount.."]=> "..recipient.."    "..description)
+      else
+        minetest.chat_send_player(name, colors["yellow"]..transactions[min_number])
+      end
       min_number = min_number + 1
     end
   end
@@ -231,7 +238,18 @@ function jeans_economy_get_last_transactions_of_all(name, count)
   end
   while min_number < number do
     local year, month, day, hour, min, sec, payor, recipient, amount, description = string.match(transactions[min_number], "(%d+) (%d+) (%d+) (%d+) (%d+) (%d+) (%S+) (%S+) (%d+) (.+)")
-    minetest.chat_send_player(name, year.."-"..month.."-"..day.." "..hour..":"..min.."  "..payor.." =["..amount.."]=> "..recipient.."    "..description)
+    if description ~= nil then
+      minetest.chat_send_player(name, year.."-"..month.."-"..day.." "..hour..":"..min.."  "..payor.." =["..amount.."]=> "..recipient.."    "..description)
+    else
+      minetest.chat_send_player(name, colors["yellow"]..transactions[min_number])
+    end
     min_number = min_number + 1
   end
+end
+
+function jeans_economy_ballance(player)
+  if balances[player] == nil then
+    balances[player] = 0
+  end
+  return balances[player]
 end

@@ -26,6 +26,7 @@ Press F10 to get a better overview over your bank statements.
 To use this mod, you have to implement one of the following line in to your code.
 - `jeans_economy_book(payor, recipient, amount, description)` This function checks, if the payor have enough money, do the transaction between these players (atm accounts), and save this transaction to the database. It returns true, if the transaction was successfully done, otherwise it returns false.
 - `jeans_economy_save(payor, recipient, amount, description)` When you only want to use the logging function, you can use this function. It only saves a transaction to the database without doing further things.
+- `jeans_economy_ballance(player)` Returns the ballance of the player. If you only want to check with this function wether the player has enough money to do something or not, you can use `jeans_economy_book` instead.
 
 **Please insert only Charakters (a-z and A-Z) and numbers 0-9) to the inputs!!**
 
