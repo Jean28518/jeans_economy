@@ -186,6 +186,7 @@ function jeans_economy_book(payor, recipient, amount, description)
       jeans_economy_change_account(payor, -amount)
       jeans_economy_save(payor, "Server", amount, description)
     else
+      minetest.chat_send_player(recipient, "You recieved " .. amount .. " Minegeld from " .. payor)
       jeans_economy_change_account(payor, -amount)
       jeans_economy_change_account(recipient, amount)
       jeans_economy_save(payor, recipient, amount, description)
