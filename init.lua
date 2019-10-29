@@ -1,8 +1,17 @@
-local storage = minetest.get_mod_storage()
-local balances = atm.balance
-if balances == nil then
-  balances = {}
-end
+jeans_economy = {}
+jeans_economy.storage = minetest.get_mod_storage()
+
+
+local modpath = minetest.get_modpath(minetest.get_current_modname())
+dofile(modpath.."/config.lua")
+dofile(modpath.."/databaseCleaning.lua")
+dofile(modpath.."/accounts.lua")
+dofile(modpath.."/automaticPayout.lua")
+
+
+jeans_economy.clear_obsolete_entrys()
+
+
 
 local colors = {
     ["red"] = minetest.get_color_escape_sequence("#ff0000"), -- Red
@@ -11,23 +20,23 @@ local colors = {
 }
 
 -- Check and initialize the transactions table:
-local transactions = minetest.deserialize(storage:get_string("transactions"))
+local transactions = minetest.deserialize(jeans_economy.storage:get_string("transactions"))
 if transactions == nil then
   transactions = {}
   transactions["number"] = 1
 end
-storage:set_string("transactions", minetest.serialize(transactions))
+jeans_economy.storage:set_string("transactions", minetest.serialize(transactions))
 
 -- Check and initialize the playertransactions table
-local transactions_player = minetest.deserialize(storage:get_string("transactions_player"))
+local transactions_player = minetest.deserialize(jeans_economy.storage:get_string("transactions_player"))
 if transactions_player == nil then
   transactions_player = {}
 end
-storage:set_string("transactions_player", minetest.serialize(transactions_player))
+jeans_economy.storage:set_string("transactions_player", minetest.serialize(transactions_player))
 
 -- Privilege:
 minetest.register_privilege("economy", {
-	description = "Player has the right to controll the Server Economy. Use this with care!.",
+	description = "Player has the right to control the Server Economy. Use this with care!.",
 	give_to_singleplayer = true,
 })
 
@@ -36,6 +45,8 @@ minetest.register_privilege("economy", {
 --------------------------------------------------------------------------------
 
 minetest.register_chatcommand("transactions", {
+  params = "<amount> <player>",
+  description = "See your latest bankstatements",
   privs = {
     interact = true,
   },
@@ -45,6 +56,7 @@ minetest.register_chatcommand("transactions", {
     player = player or name
     if (player == name or minetest.check_player_privs(name, {economy=true})) then
       jeans_economy_get_last_transactions_of_player(name, player, count)
+      minetest.log("action", "Player "..name.." uses /transactions "..param)
     else
       minetest.chat_send_player(name, "You aren't allowed to see others bank statements!")
     end
@@ -52,73 +64,93 @@ minetest.register_chatcommand("transactions", {
 })
 
 minetest.register_chatcommand("server_transactions", {
+  params = "<amount>",
+  description = "See latest transactions on the whole server",
   privs = {
     economy = true,
   },
   func = function(name, param)
     count = tonumber(param) or 25
     jeans_economy_get_last_transactions_of_all(name, count)
+    minetest.log("action", "Player "..name.." uses /server_transactions")
   end
 })
 
 --- List ATM Accounts: ----------------------------------
 minetest.register_chatcommand("balances", {
+  params = "<hurdle>",
+  description = "See all Player accounts, which balances are above the hurdle",
   privs = {
     economy = true
   },
   func = function(name, param)
-    if balances ~= nil and licenses_check_player_by_licese(name, "admin") then
+    -- get balances array whether from atm or own database.
+    local balances = jeans_economy.get_accounts_array()
+
+    if balances ~= nil then
 			local sum = 0
       local limit = tonumber(param) or 0
       for k, v in pairs(balances) do
-        if v > limit then
+        if v > limit and k ~= "!SERVER!" then
           minetest.chat_send_player(name, k .. ": " .. v)
 					sum = sum + v
         end
       end
 			minetest.chat_send_player(name, "Total money: " .. sum)
+    else
+      minetest.chat_send_player(name, "No database found/no money saved!")
     end
   end
 })
 
 -- See your Money: ------------------------------------------
 minetest.register_chatcommand("money", {
+  params = "<player>",
+  description = "See a ballance of you or another player",
   privs = {
     interact = true,
   },
   func = function(name, param)
-    local player = param
-    if param == "" then
-      player = name
+    local player = name
+    if param ~= "" then
+      player = param
     end
-  	minetest.chat_send_player(name, player .. "'s account: " .. jeans_economy_ballance(player) .. " Minegeld")
+    if not minetest.player_exists(player) then
+      minetest.chat_send_player(name, "Player not found")
+      return
+    end
+  	minetest.chat_send_player(name, player .. "'s account: " .. jeans_economy.get_account(player) .. " Minegeld")
   end
 })
 
 -- Removing/Adding some Money to a players account ------------------------------------------
 minetest.register_chatcommand("money_give", {
+  params = "<player> <amount>",
+  description = "!Cheat! some money to a players account",
   privs = {
     economy = true,
   },
   func = function(name, param)
-    local player, amount_S = param:match('^(%S+)%s(.+)$')
-    local amount = tonumber(amount_S) or 0
-    if player == nil then return end
-    if balances ~= nil and balances[player] ~= nil then
-    elseif balances == nil then
-      balances = {}
-      balances[player] = 0;
-      atm.saveaccounts()
+    local player, amount = string.match(param, "(%S+) (%S+)")
+    if player ~=nil and amount ~= nil then
+      amount_n = tonumber(amount)
+      if minetest.player_exists(player) and amount_n ~= nil then
+        jeans_economy_book("!SERVER!", player, amount, "! Cheated to "..player.."'s account.")
+        minetest.chat_send_player(name, "Successfully given " .. amount .. " Minegeld to " .. player)
+      else
+        minetest.chat_send_player(name, "Player not found/ Correct use: /help money_give")
+        return
+      end
     else
-      balances[player] = 0;
-      atm.saveaccounts()
+      minetest.chat_send_player(name, "Player not found/ Correct use: /help miney_give")
+      return
     end
-    jeans_economy_book("!SERVER!", player, amount, "! Cheated to "..player.."'s account.")
-    minetest.chat_send_player(name, "Successfully given " .. amount .. " Minegeld to " .. player)
   end
 })
 
 minetest.register_chatcommand("pay", {
+  params = "<player> <amount> <description>",
+  description = "Withdraw some money to another player.",
   privs = {
     interact = true,
   },
@@ -128,6 +160,10 @@ minetest.register_chatcommand("pay", {
     if player == nil then
       minetest.chat_send_player(name, "Correct use: /pay <player> <amount> <description>")
     else
+      if not minetest.player_exists(player) then
+        minetest.chat_send_player(name, "Player not found!")
+        return
+      end
       if jeans_economy_book(name, player, amount, description) then
         minetest.chat_send_player(name, "Transaction to "..player.." successfully done.")
       else
@@ -140,6 +176,9 @@ minetest.register_chatcommand("pay", {
 --------------------------------------------------------------------------------
 -- FUNCTIONS -------------------------------------------------------------------
 --------------------------------------------------------------------------------
+function jeans_economy.save(payor, recipient, amount, description)
+  jeans_economy_save(payor, recipient, amount, description)
+end
 
 function jeans_economy_save(payor, recipient, amount, description)
   if description == nil or description == "" then
@@ -148,16 +187,14 @@ function jeans_economy_save(payor, recipient, amount, description)
   -- description = description:gsub("%:"," ") -- Remove ":"
   -- Save global:
   local time = os.date()
-  local transactions = minetest.deserialize(storage:get_string("transactions"))
+  local transactions = minetest.deserialize(jeans_economy.storage:get_string("transactions"))
   local number = transactions["number"] -- hold for the transactions_player table
-  print(number)
   transactions[transactions["number"]] = os.date("%Y %m %d %H %M %S") .. " " .. payor .. " " .. recipient .. " " .. amount .. " " .. description
-  print(transactions[transactions["number"]] .. "   " .. transactions["number"])
   transactions["number"] = transactions["number"] + 1
-  storage:set_string("transactions", minetest.serialize(transactions))
+  jeans_economy.storage:set_string("transactions", minetest.serialize(transactions))
 
   -- Save to transactions_player:
-  local transactions_player = minetest.deserialize(storage:get_string("transactions_player"))
+  local transactions_player = minetest.deserialize(jeans_economy.storage:get_string("transactions_player"))
   if transactions_player[payor] == nil then
     transactions_player[payor] = {}
     transactions_player[payor]["number"] = 1
@@ -171,17 +208,23 @@ function jeans_economy_save(payor, recipient, amount, description)
   end
   transactions_player[recipient][transactions_player[recipient]["number"]] = number
   transactions_player[recipient]["number"] = transactions_player[recipient]["number"] + 1
-  storage:set_string("transactions_player", minetest.serialize(transactions_player))
+  jeans_economy.storage:set_string("transactions_player", minetest.serialize(transactions_player))
+  jeans_economy.check_and_fix_historylength()
+end
 
+function jeans_economy.book(payor, recipient, amount, description)
+  jeans_economy_book(payor, recipient, amount, description)
 end
 
 function jeans_economy_book(payor, recipient, amount, description)
   if payor == recipient then return false end
-  if balances[payor] == nil then balances[payor] = 0 end
-  if balances[recipient] == nil then balances[recipient] = 0 end
-  atm.saveaccounts()
-
-  if balances[payor] >= amount then
+  if payor == "!SERVER!" then
+    jeans_economy_change_account(recipient, amount)
+    jeans_economy_save("Server", recipient, amount, description)
+    minetest.log("action", "Player "..payor.." sends "..amount.." to "..recipient..": "..description)
+    minetest.chat_send_player(recipient, "You recieved " .. amount .. " Minegeld from Server")
+    return true
+  elseif jeans_economy.get_account(payor) >= amount then
     if recipient == "!SERVER!" then
       jeans_economy_change_account(payor, -amount)
       jeans_economy_save(payor, "Server", amount, description)
@@ -191,10 +234,7 @@ function jeans_economy_book(payor, recipient, amount, description)
       jeans_economy_change_account(recipient, amount)
       jeans_economy_save(payor, recipient, amount, description)
     end
-    return true
-  elseif payor == "!SERVER!" then
-    jeans_economy_change_account(recipient, amount)
-    jeans_economy_save("Server", recipient, amount, description)
+    minetest.log("action", "Player "..payor.." sends "..amount.." to "..recipient..": "..description)
     return true
   else
     return false
@@ -202,13 +242,12 @@ function jeans_economy_book(payor, recipient, amount, description)
 end
 
 function jeans_economy_change_account(player, amount)
-  balances[player] = balances[player] + amount
-  atm.saveaccounts()
+  jeans_economy.set_account(player, jeans_economy.get_account(player) + amount)
 end
 
 function jeans_economy_get_last_transactions_of_player(name, player, count)
-  local transactions = minetest.deserialize(storage:get_string("transactions"))
-  local transactions_player = minetest.deserialize(storage:get_string("transactions_player"))
+  local transactions = minetest.deserialize(jeans_economy.storage:get_string("transactions"))
+  local transactions_player = minetest.deserialize(jeans_economy.storage:get_string("transactions_player"))
   if transactions ~= nil and transactions_player ~= nil and transactions_player[player] ~= nil then
     local number = transactions["number"]
     local min_number = 1
@@ -231,7 +270,7 @@ function jeans_economy_get_last_transactions_of_player(name, player, count)
 end
 
 function jeans_economy_get_last_transactions_of_all(name, count)
-  local transactions = minetest.deserialize(storage:get_string("transactions"))
+  local transactions = minetest.deserialize(jeans_economy.storage:get_string("transactions"))
   local number = transactions["number"]
   local min_number = 1
   if number - count > 1 then
@@ -249,8 +288,5 @@ function jeans_economy_get_last_transactions_of_all(name, count)
 end
 
 function jeans_economy_ballance(player)
-  if balances[player] == nil then
-    balances[player] = 0
-  end
-  return balances[player]
+  return jeans_economy.get_account(player)
 end
