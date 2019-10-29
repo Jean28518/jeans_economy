@@ -1,6 +1,8 @@
 # Minetest Mod: Jean's Economy
 https://github.com/Jean28518/jeans_economy
 
+![Logo](logo.png)
+
 ## Features:
 - Keep track to your your economy on the server by listing all transactions your players did (with time stamps) (even individually), or listing some balances of the players.
 - bank statements individually for players
@@ -62,3 +64,6 @@ To use this mod, you have to implement one of the following line in to your code
 
 ## Screenshot of `/transactions`:
 ![Bild](screenshot.png)
+
+## Feedback?
+If you have found bugs, or have some ideas, let me know it in the github issues section!
