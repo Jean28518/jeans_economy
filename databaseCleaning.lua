@@ -30,6 +30,10 @@ end
 -- Just call this function, if you changed the jeans_economy.HISTORYLENGTH !
 function jeans_economy.clear_obsolete_entrys()
   local transactions = minetest.deserialize(jeans_economy.storage:get_string("transactions"))
+  if transactions == nil then
+    transactions = {["number"] = 0}
+    return
+  end
   local newest_number = transactions["number"]
   local new_latest_entry = newest_number - jeans_economy.HISTORYLENGTH
   if new_latest_entry < 1 then

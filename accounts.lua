@@ -37,7 +37,7 @@ function jeans_economy.get_account(player_name)
   end
   --ATM
   if minetest.get_modpath("atm") then
-    return atm.balance[player_name]
+    return atm.balance[player_name] or 0
   end
     -- Jeans Econmy
   local accounts = minetest.deserialize(jeans_economy.storage:get_string("accounts"))
@@ -50,7 +50,7 @@ end
 function jeans_economy.get_accounts_array()
   --ATM
   if minetest.get_modpath("atm") then
-    return atm.balance
+    return atm.balance or {}
   else
     -- Jeans Econmy
     local accounts = minetest.deserialize(jeans_economy.storage:get_string("accounts"))
