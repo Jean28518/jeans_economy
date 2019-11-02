@@ -6,7 +6,7 @@ end
 function jeans_economy.frequently_payout()
   minetest.log("action", "Starting Automated Payout.")
   for k, v in pairs(minetest.get_connected_players()) do
-      jeans_economy.book("!SERVER!", v:get_player_name(), jeans_economy.FREQUENTLY_PAYOUT_AMOUNT, "Frequently Payout. Thankyou for playing on the server!")
+      jeans_economy.book("!SERVER!", v:get_player_name(), jeans_economy.FREQUENTLY_PAYOUT_AMOUNT, "Frequently Payout. Thank you for playing on the server!")
   end
   minetest.after(60*jeans_economy.FREQUENTLY_PAYOUT_PERIOD, function() jeans_economy.frequently_payout() end)
 end
@@ -50,7 +50,8 @@ function jeans_economy.daily_rewards(player_name)
 
   -- Payout:
   awards_players[player_name]["lastday"] = today
-  jeans_economy.book("!SERVER!", player_name, jeans_economy.DAILY_REWARDS_AMOUNTS[awards_players[player_name]["level"]], "Your Daily Reward. Get more a higher reward by joining daily!")
+  jeans_economy.book("!SERVER!", player_name, jeans_economy.DAILY_REWARDS_AMOUNTS[awards_players[player_name]["level"]], "Your Daily Reward. Get higher rewards by joining daily!")
   jeans_economy.storage:set_string("awards_players", minetest.serialize(awards_players))
+  minetest.chat_send_player(player_name, "Your Daily Reward today is "..jeans_economy.DAILY_REWARDS_AMOUNTS[awards_players[player_name]["level"]]..". Get higher rewards by joining daily!")
   minetest.log("action", "Player "..player_name.."gets daily reward.")
 end

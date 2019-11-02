@@ -256,13 +256,17 @@ function jeans_economy_get_last_transactions_of_player(name, player, count)
       min_number = max_number - count
     end
     while min_number < max_number do
-      local year, month, day, hour, min, sec, payor, recipient, amount, description = string.match(transactions[transactions_player[player][min_number]], "(%d+) (%d+) (%d+) (%d+) (%d+) (%d+) (%S+) (%S+) (%d+) (.+)")
-      if description ~= nil then
-        local color
-        if player == payor then color = colors["red"] else color = colors["green"] end
-        minetest.chat_send_player(name, color..year.."-"..month.."-"..day.." "..hour..":"..min.."  "..payor.." =["..amount.."]=> "..recipient.."    "..description)
+      if transactions[transactions_player[player][min_number]]  == nil then
+        minetest.log("error", "Database of Player "..player.." corrupt!! This does not inherit the ballance of the player.")
       else
-        minetest.chat_send_player(name, colors["yellow"]..transactions[min_number])
+        local year, month, day, hour, min, sec, payor, recipient, amount, description = string.match(transactions[transactions_player[player][min_number]], "(%d+) (%d+) (%d+) (%d+) (%d+) (%d+) (%S+) (%S+) (%d+) (.+)")
+        if description ~= nil then
+          local color
+          if player == payor then color = colors["red"] else color = colors["green"] end
+          minetest.chat_send_player(name, color..year.."-"..month.."-"..day.." "..hour..":"..min.."  "..payor.." =["..amount.."]=> "..recipient.."    "..description)
+        else
+          minetest.chat_send_player(name, colors["yellow"]..transactions[min_number])
+        end
       end
       min_number = min_number + 1
     end
