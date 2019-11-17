@@ -177,7 +177,7 @@ minetest.register_chatcommand("pay", {
 -- FUNCTIONS -------------------------------------------------------------------
 --------------------------------------------------------------------------------
 function jeans_economy.save(payor, recipient, amount, description)
-  jeans_economy_save(payor, recipient, amount, description)
+  return jeans_economy_save(payor, recipient, amount, description)
 end
 
 function jeans_economy_save(payor, recipient, amount, description)
@@ -213,10 +213,14 @@ function jeans_economy_save(payor, recipient, amount, description)
 end
 
 function jeans_economy.book(payor, recipient, amount, description)
-  jeans_economy_book(payor, recipient, amount, description)
+  return jeans_economy_book(payor, recipient, amount, description)
 end
 
 function jeans_economy_book(payor, recipient, amount, description)
+  if (not minetest.player_exists(payor) and not payor == "!SERVER!") or (not minetest.player_exists(recipient) and not recipient == "!SERVER!") then
+    minetest.log("error", "Player "..payor.." and/or "..recipient.." doesn't exist!!")
+    return
+  end
   if payor == recipient then return false end
   if payor == "!SERVER!" then
     jeans_economy_change_account(recipient, amount)
