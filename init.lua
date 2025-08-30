@@ -79,7 +79,7 @@ minetest.register_chatcommand("server_transactions", {
 --- List ATM Accounts: ----------------------------------
 minetest.register_chatcommand("balances", {
   params = "<hurdle>",
-  description = "See all Player accounts, which balances are above the hurdle",
+  description = "See all player accounts, which balances are above the hurdle",
   privs = {
     economy = true
   },
@@ -106,7 +106,7 @@ minetest.register_chatcommand("balances", {
 -- See your Money: ------------------------------------------
 minetest.register_chatcommand("money", {
   params = "<player>",
-  description = "See a ballance of you or another player",
+  description = "See a balance of you or another player",
   privs = {
     interact = true,
   },
